@@ -23,14 +23,17 @@ jobs:
           # Windows
           - platform: windows
             os: windows-latest
+            tauri_args: ''
 
-          # Linux - Ubuntu runner produces .deb, .rpm, .AppImage
+          # Linux - builds .deb and .AppImage (AppImage works on Fedora too)
           - platform: linux
             os: ubuntu-22.04
+            tauri_args: '--bundles deb,appimage'
 
           # macOS Apple Silicon (native ARM runner)
           - platform: macos-arm
             os: macos-latest
+            tauri_args: ''
 
     runs-on: ${{ matrix.os }}
 
@@ -57,15 +60,13 @@ jobs:
       - name: Install Linux system dependencies
         if: matrix.platform == 'linux'
         run: |
-          sudo add-apt-repository -y universe
           sudo apt-get update -q
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev \
             libappindicator3-dev \
             librsvg2-dev \
             patchelf \
-            xdg-utils \
-            rpm-build
+            xdg-utils
 
       - name: Install frontend dependencies
         working-directory: client
@@ -101,9 +102,8 @@ jobs:
             | Platform | File |
             |---|---|
             | **Windows** | `_x64-setup.exe` or `.msi` |
-            | **Fedora / RPM-based Linux** | `.rpm` |
+            | **Fedora / Any Linux** | `.AppImage` (no install needed) |
             | **Ubuntu / Debian** | `.deb` |
-            | **Any Linux** | `.AppImage` |
             | **macOS Apple Silicon (M1/M2/M3)** | `_aarch64.dmg` |
 
             ### First launch — macOS (unsigned app)
@@ -124,4 +124,4 @@ jobs:
           releaseDraft: false
           prerelease: true
           includeUpdaterJson: false
-          args: --verbose
+          args: ${{ matrix.tauri_args }}
