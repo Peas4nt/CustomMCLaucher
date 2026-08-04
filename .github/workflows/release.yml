@@ -1,79 +1,71 @@
 name: 🚀 Build & Release
 
 on:
-  # Ручной запуск из GitHub UI (Actions → Run workflow)
+  # Ручной запуск из GitHub UI → Actions → Run workflow
   workflow_dispatch:
     inputs:
       release_name:
-        description: 'Release name (e.g. v0.9.3-beta)'
+        description: 'Release tag/name (e.g. v0.9.3-beta)'
         required: false
-        default: 'beta-build'
+        default: 'beta-latest'
 
-  # Автозапуск при пуше тега вида v0.9.3
+  # Автозапуск при пуше тега вида v1.0.0
   push:
     tags:
       - 'v*'
 
 jobs:
   build:
-    name: Build (${{ matrix.os }})
+    name: Build (${{ matrix.platform }})
     permissions:
       contents: write
     strategy:
       fail-fast: false
       matrix:
         include:
-          # ─── Windows ───────────────────────────────────────────
-          - os: windows-latest
-            platform: windows
-            artifact_suffix: ''
+          # ─── Windows ───────────────────────────────────────
+          - platform: windows
+            os: windows-latest
 
-          # ─── Linux (Ubuntu runner → .deb + .rpm для Fedora) ───
-          - os: ubuntu-22.04
-            platform: linux
-            artifact_suffix: ''
+          # ─── Linux (Ubuntu → .deb + .rpm + .AppImage) ─────
+          - platform: linux
+            os: ubuntu-22.04
 
-          # ─── macOS Intel ────────────────────────────────────────
-          - os: macos-latest
-            platform: macos-intel
-            rust_target: x86_64-apple-darwin
-            args: '--target x86_64-apple-darwin'
+          # ─── macOS Intel (нативный x86_64 runner) ─────────
+          - platform: macos-intel
+            os: macos-13
 
-          # ─── macOS Apple Silicon ────────────────────────────────
-          - os: macos-latest
-            platform: macos-arm
-            rust_target: aarch64-apple-darwin
-            args: '--target aarch64-apple-darwin'
+          # ─── macOS Apple Silicon (нативный ARM runner) ─────
+          - platform: macos-arm
+            os: macos-latest
 
     runs-on: ${{ matrix.os }}
 
     steps:
-      # ── 1. Checkout ─────────────────────────────────────────────
+      # ── 1. Checkout ────────────────────────────────────────
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      # ── 2. Node.js ──────────────────────────────────────────────
+      # ── 2. Node.js ─────────────────────────────────────────
       - name: ⬢ Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 'lts/*'
           cache: 'npm'
           cache-dependency-path: client/package-lock.json
 
-      # ── 3. Rust ─────────────────────────────────────────────────
+      # ── 3. Rust ────────────────────────────────────────────
       - name: 🦀 Install Rust (stable)
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.rust_target }}
 
-      - name: 🔧 Rust cache
+      - name: 🔧 Rust build cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: client/src-tauri -> target
 
-      # ── 4. Linux system deps (for Tauri + WebKit) ───────────────
+      # ── 4. Linux system deps ───────────────────────────────
       - name: 🐧 Install Linux system dependencies
-        if: matrix.os == 'ubuntu-22.04'
+        if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -81,59 +73,66 @@ jobs:
             libappindicator3-dev \
             librsvg2-dev \
             patchelf \
-            rpm \
-            rpmbuild || true
+            xdg-utils \
+            rpm
 
-      # ── 5. Frontend deps ────────────────────────────────────────
+      # ── 5. Frontend deps ───────────────────────────────────
       - name: 📦 Install frontend dependencies
         working-directory: client
         run: npm install
 
-      # ── 6. Create dummy .env (app uses defaults when absent) ─────
-      # Реальные IP берутся из secrets или дефолтных значений в Rust
-      - name: ⚙️ Create .env for build
-        working-directory: .
+      # ── 6. Создаём .env с IP из GitHub Secrets ─────────────
+      #    Если secrets не заданы — Rust использует дефолты
+      - name: ⚙️ Create .env from secrets
         shell: bash
         run: |
-          echo "SERVER_IP=${SERVER_IP:-0.0.0.0}" > .env
-          echo "SERVER_PORT=${SERVER_PORT:-25565}" >> .env
-          echo 'SERVER_NAME="JSTN Server"' >> .env
-          echo "MODS_SERVER_IP=${MODS_SERVER_IP:-127.0.0.1}" >> .env
-          echo "MODS_SERVER_PORT=${MODS_SERVER_PORT:-3000}" >> .env
+          cat > .env <<EOF
+          SERVER_IP=${SERVER_IP:-0.0.0.0}
+          SERVER_PORT=${SERVER_PORT:-25565}
+          SERVER_NAME="JSTN Server"
+          MODS_SERVER_IP=${MODS_SERVER_IP:-127.0.0.1}
+          MODS_SERVER_PORT=${MODS_SERVER_PORT:-3000}
+          EOF
         env:
           SERVER_IP: ${{ secrets.SERVER_IP }}
           SERVER_PORT: ${{ secrets.SERVER_PORT }}
           MODS_SERVER_IP: ${{ secrets.MODS_SERVER_IP }}
           MODS_SERVER_PORT: ${{ secrets.MODS_SERVER_PORT }}
 
-      # ── 7. Build Tauri app & publish release ────────────────────
-      - name: 🏗️ Build Tauri app
+      # ── 7. Tauri build + GitHub Release ────────────────────
+      - name: 🏗️ Build & publish release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Отключаем macOS code signing (для тестовой раздачи)
-          APPLE_SIGNING_IDENTITY: '-'
+          # macOS: НЕ устанавливаем APPLE_SIGNING_IDENTITY
+          # Tauri v2 автоматически пропустит подпись если нет сертификата
         with:
           projectPath: client
           tagName: ${{ github.ref_name != 'master' && github.ref_name || inputs.release_name || 'beta-latest' }}
           releaseName: '⛏️ CustomMCLauncher ${{ github.ref_name != ''master'' && github.ref_name || inputs.release_name || ''beta'' }}'
           releaseBody: |
-            ## 🚀 Beta Build
-
-            > ⚠️ Это бета-версия для тестирования. IP-адреса сервера вшиты в бинарник.
+            ## 🚀 Beta Build — для тестирования
 
             ### 📥 Что скачивать:
             | Платформа | Файл |
             |---|---|
-            | **Windows** | `.msi` или `_x64-setup.exe` |
+            | **Windows** | `_x64-setup.exe` или `.msi` |
             | **Fedora / Linux** | `.rpm` или `.AppImage` |
-            | **macOS Intel** | `_x64.dmg` |
-            | **macOS Apple Silicon (M1/M2/M3)** | `_aarch64.dmg` |
+            | **Ubuntu / Debian** | `.deb` |
+            | **macOS Intel (x86_64)** | `_x64.dmg` |
+            | **macOS M1/M2/M3 (ARM)** | `_aarch64.dmg` |
 
-            ### ⚠️ macOS: первый запуск
-            Приложение не подписано. При первом запуске:
-            `System Preferences → Security & Privacy → Open Anyway`
+            ### ⚠️ macOS — первый запуск (приложение не подписано):
+            ```
+            System Settings → Privacy & Security → Open Anyway
+            ```
+            Или в терминале: `xattr -cr /Applications/mc-launcher.app`
+
+            ### ⚠️ Linux — AppImage:
+            ```bash
+            chmod +x mc-launcher_*.AppImage
+            ./mc-launcher_*.AppImage
+            ```
           releaseDraft: false
           prerelease: true
-          args: ${{ matrix.args }}
           includeUpdaterJson: false
