@@ -1,0 +1,14 @@
+{
+  "name": "mc-launcher-server",
+  "version": "1.0.0",
+  "description": "Backend API and mod distribution server for custom Minecraft launcher",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node src/index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
