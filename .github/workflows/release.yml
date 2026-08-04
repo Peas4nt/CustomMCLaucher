@@ -20,6 +20,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Windows
+          - platform: windows
+            os: windows-latest
+
           # Linux - Ubuntu runner produces .deb, .rpm, .AppImage
           - platform: linux
             os: ubuntu-22.04
@@ -101,6 +105,7 @@ jobs:
 
             | Platform | File |
             |---|---|
+            | **Windows** | `_x64-setup.exe` or `.msi` |
             | **Fedora / RPM-based Linux** | `.rpm` |
             | **Ubuntu / Debian** | `.deb` |
             | **Any Linux** | `.AppImage` |
