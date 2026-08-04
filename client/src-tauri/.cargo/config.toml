@@ -1,2 +1,3 @@
-[build]
-target-dir = "C:\\cargo-target"
+# Intentionally empty.
+# The Windows-specific target-dir was removed because it breaks macOS/Linux CI.
+# Cargo uses the default ./target directory on all platforms.
