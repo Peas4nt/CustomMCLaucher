@@ -53,21 +53,17 @@ jobs:
         with:
           workspaces: client/src-tauri -> target
 
-      # Linux: full set of Tauri v2 system deps for Ubuntu 22.04
+      # Linux: exact Tauri v2 required packages for Ubuntu 22.04
       - name: Install Linux system dependencies
         if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev \
-            build-essential \
-            libssl-dev \
-            libgtk-3-dev \
-            libayatana-appindicator3-dev \
+            libappindicator3-dev \
             librsvg2-dev \
             patchelf \
             xdg-utils \
-            file \
             rpm-build
 
       - name: Install frontend dependencies
@@ -90,8 +86,6 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Explicitly empty = skip macOS code signing (unsigned beta build)
-          APPLE_SIGNING_IDENTITY: ""
         with:
           projectPath: client
           tagName: ${{ github.ref_name != 'master' && github.ref_name || inputs.release_name || 'beta-latest' }}
