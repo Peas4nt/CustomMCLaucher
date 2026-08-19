@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  cmcl-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        REPO_URL: https://github.com/Peas4nt/CustomMCLaucher.git
+        BRANCH: main
+    container_name: cmcl-backend
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - JWT_SECRET=cmcl_secure_production_secret_change_me
+      - DATABASE_URL=file:/app/prisma/prod.db
+      - CORS_ORIGIN=*
+      - MODPACK_STORAGE_DIR=/app/storage
+    volumes:
+      # Persistent storage on host machine
+      - ./data/prisma:/app/prisma
+      - ./data/uploads:/app/uploads
+      - ./data/storage:/app/storage

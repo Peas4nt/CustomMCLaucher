@@ -1,0 +1,90 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "binary"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  role         String   @default("USER") // "ADMIN" | "USER"
+  status       String   @default("ACTIVE") // "ACTIVE" | "DEACTIVATED"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("users")
+}
+
+model GameServer {
+  id          String   @id @default(uuid())
+  name        String
+  ipAddress   String
+  port        Int      @default(25565)
+  isPrimary   Boolean  @default(false)
+  description String?
+  iconUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("game_servers")
+}
+
+model GlobalConfig {
+  id               String   @id @default("global")
+  minecraftVersion String   @default("1.20.1")
+  loaderType       String   @default("FABRIC") // "FABRIC" | "FORGE" | "NEOFORGE" | "VANILLA"
+  loaderVersion    String   @default("0.15.11")
+  javaVersion      Int      @default(17)
+  jvmArgs          String   @default("-XX:+UseG1GC -Dsun.rmi.dgc.server.gcInterval=2147483646 -XX:+UnlockExperimentalVMOptions -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=32M")
+  updatedAt        DateTime @updatedAt
+
+  @@map("global_configs")
+}
+
+model IndexedFile {
+  id           String   @id @default(uuid())
+  relativePath String   @unique // e.g. "mods/sodium-fabric-0.5.8.jar"
+  category     String   // "mods" | "config" | "shaderpacks" | "resourcepacks"
+  sha256       String
+  sizeBytes    Int
+  updatedAt    DateTime @updatedAt
+
+  @@index([category])
+  @@map("indexed_files")
+}
+
+model NewsTag {
+  id        String        @id @default(uuid())
+  name      String        @unique
+  slug      String        @unique
+  color     String        @default("#df9168")
+  articles  NewsArticle[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@map("news_tags")
+}
+
+model NewsArticle {
+  id          String    @id @default(uuid())
+  title       String
+  slug        String    @unique
+  coverImage  String
+  summary     String
+  content     String
+  images      String    @default("[]") // JSON string array of gallery image URLs
+  tagId       String?
+  tag         NewsTag?  @relation(fields: [tagId], references: [id], onDelete: SetNull)
+  viewsCount  Int       @default(0)
+  published   Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("news_articles")
+}

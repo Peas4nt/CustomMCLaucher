@@ -1,41 +1,30 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
   theme: {
     extend: {
       colors: {
-        "bg-base": "#0e1217",
-        "bg-card": "#161d24",
-        "bg-input": "#1a2230",
-        "bg-hover": "#1e2a38",
-        "brand-green": "#1bd96a",
-        "brand-teal": "#00b7c3",
-        "text-primary": "#e8edf3",
-        "text-secondary": "#8fa0b3",
-        "text-muted": "#566878",
-        "status-online": "#1bd96a",
-        "status-offline": "#f45d5d",
+        hytale: {
+          bg: '#0b0f17',
+          card: 'rgba(15, 23, 42, 0.75)',
+          border: 'rgba(255, 255, 255, 0.1)',
+          emerald: '#10b981',
+          emeraldDark: '#059669',
+          cyan: '#06b6d4',
+          gold: '#f59e0b',
+        }
       },
-      keyframes: {
-        "fade-in": {
-          "0%": { opacity: "0" },
-          "100%": { opacity: "1" },
-        },
-        "slide-up": {
-          "0%": { opacity: "0", transform: "translateY(12px)" },
-          "100%": { opacity: "1", transform: "translateY(0)" },
-        },
-        "slide-right": {
-          "0%": { opacity: "0", transform: "translateX(-16px)" },
-          "100%": { opacity: "1", transform: "translateX(0)" },
-        },
+      backgroundImage: {
+        'hero-pattern': "radial-gradient(ellipse at top, rgba(16, 185, 129, 0.15), transparent 70%), radial-gradient(ellipse at bottom, rgba(6, 182, 212, 0.1), transparent 70%)",
       },
-      animation: {
-        "fade-in": "fade-in 0.2s ease-out",
-        "slide-up": "slide-up 0.25s ease-out",
-        "slide-right": "slide-right 0.2s ease-out",
-      },
+      boxShadow: {
+        'glow-emerald': '0 0 25px -5px rgba(16, 185, 129, 0.5)',
+        'glow-cyan': '0 0 25px -5px rgba(6, 182, 212, 0.5)',
+      }
     },
   },
   plugins: [],
-};
+}

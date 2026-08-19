@@ -1,21 +1,26 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
-  "productName": "mc-launcher",
-  "version": "0.6.0",
-  "identifier": "com.mclauncher.dev",
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/tooling/cli/schema.json",
+  "productName": "CustomMCLauncher",
+  "version": "1.0.0",
+  "identifier": "com.custommclauncher.app",
   "build": {
     "beforeDevCommand": "npm run dev",
-    "devUrl": "http://localhost:1420",
+    "devUrl": "http://localhost:5173",
     "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist"
   },
   "app": {
     "windows": [
       {
-        "title": "Minecraft Launcher",
-        "width": 440,
-        "height": 680,
-        "resizable": false,
+        "title": "CustomMCLauncher",
+        "width": 1180,
+        "height": 720,
+        "minWidth": 1080,
+        "minHeight": 680,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "transparent": false,
         "center": true
       }
     ],
@@ -33,9 +38,10 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "macOS": {
-      "signingIdentity": null,
-      "hardenedRuntime": false
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
     }
   }
 }

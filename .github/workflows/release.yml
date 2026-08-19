@@ -1,127 +1,92 @@
-name: Build & Release
+name: "Release Client Packages"
 
 on:
-  workflow_dispatch:
-    inputs:
-      release_name:
-        description: 'Release tag/name (e.g. v0.9.3-beta)'
-        required: false
-        default: 'beta-latest'
   push:
     tags:
-      - 'v*'
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag (e.g. v1.0.0)"
+        required: false
+        default: "v1.0.0"
+
+permissions:
+  contents: write
 
 jobs:
-  build:
-    name: Build (${{ matrix.platform }})
-    permissions:
-      contents: write
+  build-and-release:
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Windows
-          - platform: windows
-            os: windows-latest
-            tauri_args: ''
+          # 1. Windows (x64: .msi & .exe)
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            args: ""
 
-          # Linux - builds .deb and .AppImage (AppImage works on Fedora too)
-          - platform: linux
-            os: ubuntu-22.04
-            tauri_args: '--bundles deb,appimage'
+          # 2. Linux / Fedora / Ubuntu (.AppImage & .deb)
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            args: ""
 
-          # macOS Apple Silicon (native ARM runner)
-          - platform: macos-arm
-            os: macos-latest
-            tauri_args: ''
+          # 3. macOS ARM64 Apple Silicon M1/M2/M3 (.dmg & .app)
+          - os: macos-14
+            target: aarch64-apple-darwin
+            args: "--target aarch64-apple-darwin"
 
     runs-on: ${{ matrix.os }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js (v20)
         uses: actions/setup-node@v4
         with:
-          node-version: 'lts/*'
-          cache: 'npm'
+          node-version: 20
+          cache: "npm"
           cache-dependency-path: client/package-lock.json
 
-      - name: Install Rust (stable)
+      - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
-      - name: Rust build cache
+      - name: Rust Cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: client/src-tauri
+          workspaces: "./client/src-tauri -> target"
 
-      # Linux: Tauri v2 required packages for Ubuntu 22.04
-      - name: Install Linux system dependencies
-        if: matrix.platform == 'linux'
+      # Linux dependencies for Tauri v2 & AppImage generation
+      - name: Install Linux dependencies (Ubuntu/Debian runner)
+        if: matrix.os == 'ubuntu-22.04'
         run: |
-          sudo apt-get update -q
+          sudo apt-get update
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev \
-            libappindicator3-dev \
-            librsvg2-dev \
-            patchelf \
-            xdg-utils
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
 
-      - name: Install frontend dependencies
-        working-directory: client
-        run: npm install
+      - name: Install Client NPM dependencies
+        working-directory: ./client
+        run: npm ci
 
-      # Write .env from GitHub Secrets (falls back to defaults if not set)
-      - name: Create .env from secrets
-        shell: bash
-        run: |
-          cat > .env << 'EOF'
-          SERVER_IP=${{ secrets.SERVER_IP || '0.0.0.0' }}
-          SERVER_PORT=${{ secrets.SERVER_PORT || '25565' }}
-          SERVER_NAME="JSTN Server"
-          MODS_SERVER_IP=${{ secrets.MODS_SERVER_IP || '127.0.0.1' }}
-          MODS_SERVER_PORT=${{ secrets.MODS_SERVER_PORT || '3000' }}
-          EOF
-
-      - name: Build & publish release
+      # Build client & draft/upload GitHub Release
+      - name: Build Tauri Desktop Application
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          projectPath: client
-          tagName: ${{ github.ref_name != 'master' && github.ref_name || inputs.release_name || 'beta-latest' }}
-          releaseName: 'CustomMCLauncher ${{ github.ref_name != ''master'' && github.ref_name || inputs.release_name || ''beta'' }}'
-          releaseBody: |
-            ## Beta Build — For Testing
-
-            > **Note:** IPs and ports are baked into the binary. This is an unsigned beta — see instructions below.
-
-            ### Download
-
-            | Platform | File |
-            |---|---|
-            | **Windows** | `_x64-setup.exe` or `.msi` |
-            | **Fedora / Any Linux** | `.AppImage` (no install needed) |
-            | **Ubuntu / Debian** | `.deb` |
-            | **macOS Apple Silicon (M1/M2/M3)** | `_aarch64.dmg` |
-
-            ### First launch — macOS (unsigned app)
-            macOS will block the app on first run. To open it:
-            ```
-            System Settings → Privacy & Security → scroll down → Open Anyway
-            ```
-            Or via terminal:
-            ```bash
-            xattr -cr /Applications/mc-launcher.app
-            ```
-
-            ### First launch — Linux AppImage
-            ```bash
-            chmod +x mc-launcher_*.AppImage
-            ./mc-launcher_*.AppImage
-            ```
+          projectPath: "./client"
+          tagName: ${{ github.ref_name || inputs.release_tag }}
+          releaseName: "CustomMCLauncher ${{ github.ref_name || inputs.release_tag }}"
+          releaseBody: "Automated multi-platform client release for Windows, Linux (AppImage), and macOS (Apple Silicon ARM)."
           releaseDraft: false
-          prerelease: true
-          includeUpdaterJson: false
-          args: ${{ matrix.tauri_args }}
+          prerelease: false
+          args: ${{ matrix.args }}

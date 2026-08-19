@@ -1,23 +1,38 @@
 [package]
-name = "mc-launcher"
-version = "0.6.0"
-description = "Custom Minecraft Launcher with NeoForge auto-installer"
-authors = ["Launcher Dev"]
+name = "custom-mc-launcher"
+version = "1.0.0"
+description = "Custom Minecraft Launcher with differential modpack sync"
+authors = ["CustomMCLauncher Team"]
 edition = "2021"
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build = { version = "2.0.0", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
-tauri-plugin-opener = "2"
+tauri = { version = "2.0.0", features = [] }
+tauri-plugin-shell = "2.0.0"
+tauri-plugin-dialog = "2.0.0"
+tauri-plugin-fs = "2.0.0"
+tauri-plugin-os = "2.0.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-tokio = { version = "1", features = ["full"] }
-reqwest = { version = "0.12", features = ["json"] }
-craftping = { version = "0.7", features = ["sync"] }
-dirs = "5"
+tokio = { version = "1.38", features = ["full"] }
+reqwest = { version = "0.12", features = ["json", "stream"] }
+futures-util = "0.3"
 sha2 = "0.10"
-walkdir = "2"
-uuid = { version = "1.10", features = ["v3", "v4"] }
-zip = { version = "2", default-features = false, features = ["deflate"] }
+hex = "0.4"
+zip = { version = "2.1", default-features = false, features = ["deflate"] }
+walkdir = "2.5"
+thiserror = "1.0"
+fastnbt = "2.4"
+flate2 = "1.0"
+log = "0.4"
+env_logger = "0.11"
+dirs = "5.0"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "z"
+strip = true

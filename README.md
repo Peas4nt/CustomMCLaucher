@@ -1,161 +1,93 @@
-<div align="center">
+# ⚔️ CustomMCLauncher (CML) v1.0
 
-# ⛏️ CustomMCLauncher
-
-**A sleek, custom Minecraft launcher built with Tauri v2, React, and Node.js**
-
-![Beta](https://img.shields.io/badge/status-beta-orange?style=for-the-badge)
-![Tauri](https://img.shields.io/badge/Tauri-v2-24C8DB?style=for-the-badge&logo=tauri)
-![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
-![Node.js](https://img.shields.io/badge/Node.js-Express-339933?style=for-the-badge&logo=node.js)
-![Rust](https://img.shields.io/badge/Rust-Powered-CE422B?style=for-the-badge&logo=rust)
-
-</div>
+> **Next-Generation Custom Minecraft Launcher & Modpack Distribution Platform**  
+> Built with **Tauri v2 (Rust)**, **React 18 + TypeScript**, **Express.js**, **Prisma ORM**, and **SQLite**.
 
 ---
 
-## 📖 Overview
+## ✨ Features
 
-CustomMCLauncher is a lightweight, self-hosted Minecraft launcher with a built-in **mod auto-sync system**. Players always have the latest mods, resource packs, and shader packs without manually downloading anything.
-
-### ✨ Key Features
-
-| Feature | Description |
-|---|---|
-| 🎮 **One-Click Launch** | Launches Minecraft with configured server directly |
-| 🔄 **Differential Sync** | Downloads only changed/new files — blazing fast |
-| 📦 **Mods, RP & Shaders** | Syncs `.minecraft/mods`, `resourcepacks`, and `shaderpacks` |
-| 🛡️ **Player Pack Preservation** | Never deletes player-added custom content |
-| ⚡ **In-Memory Cache** | Server answers manifest requests in <1ms |
-| 🌑 **Dark Glassmorphism UI** | Sleek emerald-accented dark interface |
-| 📊 **Live Progress Bar** | Real-time MB/s sync progress in-place on Play button |
-| 📁 **Quick Folder Access** | One-click shortcuts to Mods / RP / Shader folders |
+- ⚡ **Ultra-Fast Rust Core**: Native asset download pipelines, automatic library extraction, and headless NeoForge (21.1+) & Fabric installation.
+- 🎨 **Modern Dark UI**: Hytale-inspired aesthetic with terracotta gradients, glassmorphism, and seamless view transitions.
+- 🔄 **Differential Modpack Sync**: SHA-256 file indexer syncs server mods while preserving players' custom client shaders and settings.
+- 📰 **Integrated News Feed**: Community announcements, swipeable multi-image carousels, full-size image lightbox inspectors, and rich markdown text.
+- 🛠️ **Built-in Admin Panel (`/admin`)**: Web management dashboard for game servers, modpack file uploads, global version config, and news articles.
+- 🐳 **Docker-Ready**: Instant backend deployment with Git Sparse Checkout and persistent volumes.
 
 ---
 
-## 🖥️ Tech Stack
+## 🎮 Instructions for Players (Client Setup)
 
-```
-mc-launcher/
-├── client/          # Tauri v2 + React + TypeScript + Vite + Tailwind CSS v3
-│   └── src-tauri/   # Rust backend (file I/O, hashing, Minecraft launch)
-└── server/          # Node.js + Express (mod distribution API)
-```
+### 📥 1. Download & Install
+1. Go to the [Releases](https://github.com/Peas4nt/CustomMCLaucher/releases) section of this repository.
+2. Download the installer for your operating system:
+   - **Windows**: `CustomMCLauncher_1.0.0_x64_en-US.msi` (or `.exe` setup)
+   - **Linux**: `CustomMCLauncher_1.0.0_amd64.AppImage` (or `.deb`)
+   - **macOS**: `CustomMCLauncher_1.0.0_x64.dmg`
+3. Run the installer and launch **CustomMCLauncher**.
 
----
-
-## ⚙️ Prerequisites
-
-Before you begin, make sure you have the following installed:
-
-- **[Node.js](https://nodejs.org/)** v18 or later
-- **[Rust](https://rustup.rs/)** (stable toolchain)
-- **[Java](https://adoptium.net/)** 17+ (required to run Minecraft)
-- **[Git](https://git-scm.com/)**
-
-> [!TIP]
-> On Windows, also install the **[Visual Studio C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)** — required by Tauri.
+### 🚀 2. Connect & Play
+1. **Server Setup**: When opening for the first time, enter the Backend Server URL (e.g. `http://play.yourserver.com:4000`).
+2. **Account**: Sign in or create an account with your email, username, and password.
+3. **Launch**: Select your realm from the top bar and click **PLAY**. The launcher will automatically download Minecraft, the required mod loader (NeoForge/Fabric), and all server mods.
 
 ---
 
-## 🚀 Getting Started
+## 🐳 Instructions for Server Hosting (Docker Deployment)
 
-### 1. Clone the repository
+You can deploy the entire backend (API, Database, File Storage, and Web Admin Panel) on your VDS/VPS in seconds using Docker.
 
+### 📋 Prerequisites
+- A server with **Docker** and **Docker Compose** installed.
+
+### 🚀 Quick Start (2 Files Setup)
+
+1. Create a new directory on your server and navigate into it:
+   ```bash
+   mkdir cml-server && cd cml-server
+   ```
+
+2. Download `docker-compose.yml` and `Dockerfile` from this repository:
+   ```bash
+   curl -O https://raw.githubusercontent.com/Peas4nt/CustomMCLaucher/main/docker-compose.yml
+   curl -O https://raw.githubusercontent.com/Peas4nt/CustomMCLaucher/main/Dockerfile
+   ```
+
+3. Launch the container:
+   ```bash
+   docker compose up -d --build
+   ```
+
+4. **Access your server**:
+   - 🌐 **Web Admin Panel**: `http://<YOUR_SERVER_IP>:4000/admin`
+   - 🔌 **API Health Endpoint**: `http://<YOUR_SERVER_IP>:4000/api/health`
+
+> 💾 **Data Persistence**: Your database, uploaded news photos, and modpack files are automatically saved in the `./data/` folder on your host machine.
+
+---
+
+## 👨‍💻 Instructions for Developers & Building from Source
+
+If you want to contribute, modify the code, or compile the client and server locally:
+
+📖 **Read the full developer guide: [INSTRUCTIONS.md](file:///d:/programming/mc-launcher/INSTRUCTIONS.md)**
+
+### ⚡ Quick Developer Commands
 ```bash
-git clone https://github.com/Peas4nt/CustomMCLaucher.git
-cd CustomMCLaucher
+# 1. Start Backend API & Admin Web
+cd server && npm run dev
+
+# 2. Start Admin Web Frontend (standalone)
+cd admin-web && npm run dev
+
+# 3. Start Tauri Client (Desktop App)
+cd client && npm run tauri dev
+
+# 4. Build Production Client Installer (MSI / AppImage / DMG)
+cd client && npm run tauri build
 ```
-
-### 2. Configure environment
-
-```bash
-cp .env.example .env
-# Open .env and fill in your server IP, port, and mod server address
-```
-
-### 3. Install Client dependencies
-
-```bash
-cd client
-npm install
-```
-
-### 4. Install Server dependencies
-
-```bash
-cd ../server
-npm install
-```
-
----
-
-## 🧑‍💻 Running in Development
-
-Open **two separate terminals**:
-
-**Terminal 1 — Start the Mod API Server:**
-```bash
-cd server
-npm start
-```
-
-**Terminal 2 — Start the Launcher (Tauri dev):**
-```bash
-cd client
-npm run tauri dev
-```
-
-> [!NOTE]
-> First launch compiles the Rust backend — this may take 2–5 minutes. Subsequent launches are instant.
-
----
-
-## 🏗️ Building for Production
-
-```bash
-cd client
-npm run tauri build
-```
-
-Output installer/executable will be in:
-```
-client/src-tauri/target/release/bundle/
-```
-
----
-
-## 🔧 Server — Mod Distribution API
-
-The `server/` folder is a standalone Express.js server that serves your mods, resource packs, and shader packs.
-
-### Directory structure for your content:
-
-```
-server/public/
-├── mods/            # .jar mod files
-├── resourcepacks/   # .zip resource packs
-└── shaderpacks/     # .zip shader packs
-```
-
-### API Endpoints
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/health` | Server health + file counts |
-| `GET` | `/api/manifest` | Full manifest (all categories) |
-| `GET` | `/api/manifest/mods` | Mods manifest only |
-| `GET` | `/api/manifest/resourcepacks` | Resource packs manifest |
-| `GET` | `/api/manifest/shaderpacks` | Shader packs manifest |
-
----
-
-## ⚠️ Beta Notice
-
-This project is currently in **beta**. Things may break, change, or be incomplete. Contributions, bug reports, and suggestions are welcome!
 
 ---
 
 ## 📄 License
-
-MIT — see [LICENSE](LICENSE) for details.
+This project is open-source under the [MIT License](LICENSE).

@@ -65,3 +65,20 @@ logs/
 *.swp
 *.env copy
 create_png.py
+
+# ==========================================
+# Databases & Local Storage
+# ==========================================
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+server/prisma/*.db
+server/prisma/*.db-journal
+data/
+server/data/
+server/uploads/news/*
+!server/uploads/news/.gitkeep
+server/storage/*
+!server/storage/.gitkeep
+
