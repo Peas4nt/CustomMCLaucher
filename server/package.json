@@ -5,9 +5,9 @@
   "description": "Enterprise-grade Custom Minecraft Launcher Backend & Sync Server",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "prisma db push --skip-generate && tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "prisma db push --skip-generate && node dist/index.js",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio"
