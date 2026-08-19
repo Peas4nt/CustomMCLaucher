@@ -49,8 +49,8 @@ You can deploy the entire backend (API, Database, File Storage, and Web Admin Pa
 
 2. Download `docker-compose.yml` and `Dockerfile` from this repository:
    ```bash
-   curl -O https://raw.githubusercontent.com/Peas4nt/CustomMCLaucher/main/docker-compose.yml
-   curl -O https://raw.githubusercontent.com/Peas4nt/CustomMCLaucher/main/Dockerfile
+   curl -O https://raw.githubusercontent.com/Peas4nt/CustomMCLaucher/master/docker-compose.yml
+   curl -O https://raw.githubusercontent.com/Peas4nt/CustomMCLaucher/master/Dockerfile
    ```
 
 3. Launch the container:

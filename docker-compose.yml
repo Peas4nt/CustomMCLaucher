@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
       args:
         REPO_URL: https://github.com/Peas4nt/CustomMCLaucher.git
-        BRANCH: main
+        BRANCH: master
     container_name: cmcl-backend
     restart: unless-stopped
     ports:

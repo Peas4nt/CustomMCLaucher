@@ -4,7 +4,7 @@
 FROM alpine/git:latest AS git-cloner
 
 ARG REPO_URL=https://github.com/Peas4nt/CustomMCLaucher.git
-ARG BRANCH=main
+ARG BRANCH=master
 
 WORKDIR /workspace
 
