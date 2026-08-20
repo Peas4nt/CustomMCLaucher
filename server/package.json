@@ -5,11 +5,11 @@
   "description": "Enterprise-grade Custom Minecraft Launcher Backend & Sync Server",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "prisma db push --skip-generate && tsx watch src/index.ts",
+    "dev": "prisma db push --schema=./prisma/schema.prisma --skip-generate && tsx watch src/index.ts",
     "build": "tsc",
-    "start": "prisma db push --skip-generate && node dist/index.js",
-    "prisma:generate": "prisma generate",
-    "prisma:push": "prisma db push",
+    "start": "prisma db push --schema=./prisma/schema.prisma --skip-generate && node dist/index.js",
+    "prisma:generate": "prisma generate --schema=./prisma/schema.prisma",
+    "prisma:push": "prisma db push --schema=./prisma/schema.prisma",
     "prisma:studio": "prisma studio"
   },
   "keywords": [

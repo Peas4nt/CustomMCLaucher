@@ -24,7 +24,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # Create directories for persistent volumes
-RUN mkdir -p /app/uploads/news /app/storage /app/prisma
+RUN mkdir -p /app/uploads/news /app/storage /app/data
 
 # -------------------------------------------------------------------
 # Stage 2: Production Server Runner
@@ -39,10 +39,10 @@ COPY --from=builder /app /app
 # Environment configuration
 ENV NODE_ENV=production
 ENV PORT=4000
-ENV DATABASE_URL="file:/app/prisma/prod.db"
+ENV DATABASE_URL="file:/app/data/prod.db"
 ENV CORS_ORIGIN="*"
 
 EXPOSE 4000
 
 # Initialize SQLite database schema on boot and start server
-CMD ["sh", "-c", "npx prisma db push --skip-generate && npm run start"]
+CMD ["sh", "-c", "npx prisma db push --schema=/app/prisma/schema.prisma --skip-generate && npm run start"]
