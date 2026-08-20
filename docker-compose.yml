@@ -10,6 +10,7 @@ services:
     restart: unless-stopped
     security_opt:
       - apparmor:unconfined
+    privileged: true
     ports:
       - "4000:4000"
     environment:
