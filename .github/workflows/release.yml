@@ -8,7 +8,7 @@ on:
     inputs:
       release_tag:
         description: "Release tag (e.g. v1.1.0)"
-        required: false
+        required: true
         default: "v1.1.0"
 
 permissions:
@@ -77,6 +77,17 @@ jobs:
         working-directory: ./client
         run: npm ci
 
+      # Resolve the correct tag: push event = git tag, manual trigger = input value
+      - name: Resolve release tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "value=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "value=${{ inputs.release_tag }}" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
       # Build client & draft/upload GitHub Release
       - name: Build Tauri Desktop Application
         uses: tauri-apps/tauri-action@v0
@@ -84,8 +95,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: "./client"
-          tagName: ${{ github.ref_name || inputs.release_tag }}
-          releaseName: "CustomMCLauncher ${{ github.ref_name || inputs.release_tag }}"
+          tagName: ${{ steps.tag.outputs.value }}
+          releaseName: "CustomMCLauncher ${{ steps.tag.outputs.value }}"
           releaseBody: "Automated multi-platform client release for Windows, Linux (AppImage), and macOS (Apple Silicon ARM)."
           releaseDraft: false
           prerelease: false
