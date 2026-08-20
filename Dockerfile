@@ -24,7 +24,7 @@ RUN git clone --depth 1 --filter=blob:none --sparse --branch ${BRANCH} ${REPO_UR
 WORKDIR /app
 
 # Copy server files
-RUN cp -r /workspace/repo/server/* /app/
+RUN cp -a /workspace/repo/server/. /app/
 
 # Install dependencies, generate Prisma client, and compile TypeScript
 RUN npm install --prefer-offline --no-audit
