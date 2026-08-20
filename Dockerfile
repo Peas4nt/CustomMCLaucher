@@ -14,14 +14,17 @@ RUN git clone --depth 1 --filter=blob:none --sparse --branch ${BRANCH} ${REPO_UR
     git sparse-checkout set server
 
 # -------------------------------------------------------------------
-# Stage 2: Build & Production Server Environment
+# Stage 2: Build & Production Server Environment (Debian Slim)
 # -------------------------------------------------------------------
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 
 WORKDIR /app
 
-# Install native tools and libraries required for Prisma & SQLite on Alpine
-RUN apk add --no-cache openssl libc6-compat dumb-init
+# Install openssl and dumb-init (compatible with all Ubuntu / Debian / LXC hosts)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl \
+    dumb-init \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy only the server files extracted from git
 COPY --from=git-cloner /workspace/repo/server /app
