@@ -1,4 +1,3 @@
-use serde::Serialize;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
@@ -24,13 +23,6 @@ pub struct LaunchOptions {
     pub window_width: u32,
     pub window_height: u32,
     pub extra_game_args: Vec<String>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct GameLogPayload {
-    pub text: String,
-    pub stream: String, // "stdout" | "stderr"
-    pub timestamp: String,
 }
 
 pub struct MinecraftLauncher;
@@ -86,22 +78,12 @@ impl MinecraftLauncher {
         let mut all_cp = options.classpath_entries.clone();
         all_cp.push(options.client_jar);
 
-        // Deduplicate classpath entries by library artifact family while preserving loader precedence
-        let mut seen_keys = std::collections::HashSet::new();
+        // Deduplicate classpath entries by normalized file path while preserving order
+        let mut seen_paths = std::collections::HashSet::new();
         let mut unique_cp = Vec::new();
         for p in all_cp {
             let s = p.to_string_lossy().to_lowercase().replace('\\', "/");
-            let family_key = if let Some(parent) = p.parent() {
-                if let Some(grandparent) = parent.parent() {
-                    grandparent.to_string_lossy().to_lowercase().replace('\\', "/")
-                } else {
-                    s.clone()
-                }
-            } else {
-                s.clone()
-            };
-
-            if seen_keys.insert(family_key) {
+            if seen_paths.insert(s) {
                 unique_cp.push(p);
             }
         }
@@ -138,11 +120,21 @@ impl MinecraftLauncher {
             }
         }
 
-        // Auto-connect to selected server if specified
+        // Auto-connect to selected primary/chosen server if specified
         if let Some(ip) = &options.server_ip {
-            cmd.arg("--server").arg(ip);
-            if let Some(port) = options.server_port {
-                cmd.arg("--port").arg(port.to_string());
+            let trimmed_ip = ip.trim();
+            if !trimmed_ip.is_empty() {
+                let (host, port_val) = if let Some((h, p)) = trimmed_ip.split_once(':') {
+                    (h, p.parse::<u16>().ok().or(options.server_port))
+                } else {
+                    (trimmed_ip, options.server_port)
+                };
+
+                let port_str = port_val.unwrap_or(25565).to_string();
+
+                cmd.arg("--server").arg(host);
+                cmd.arg("--port").arg(&port_str);
+                cmd.arg("--quickPlayMultiplayer").arg(format!("{}:{}", host, port_str));
             }
         }
 

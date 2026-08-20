@@ -91,7 +91,7 @@ export const AdminLayout: React.FC = () => {
                 CML CONTROL CENTER
               </span>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#d97757]/20 text-[#df9168] border border-[#d97757]/30">
-                v1.0 ADMIN
+                v1.1 ADMIN
               </span>
             </div>
             <p className="text-[11px] text-slate-400 font-mono">
@@ -234,7 +234,7 @@ export const AdminLayout: React.FC = () => {
       {/* Footer */}
       <footer className="px-8 py-5 border-t border-white/[0.06] bg-[#090a0d] text-xs font-mono text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-3">
         <div>
-          <span>CustomMCLauncher Management Portal • v1.0</span>
+          <span>CustomMCLauncher Management Portal • v1.1</span>
         </div>
         <div className="flex items-center gap-5">
           <a

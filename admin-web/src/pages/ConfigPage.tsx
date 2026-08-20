@@ -36,7 +36,7 @@ export const ConfigPage: React.FC = () => {
         setLoadingVersions(true);
         const [savedConfig, mojangList] = await Promise.all([
           adminApi.getGlobalConfig().catch(() => null),
-          adminApi.fetchMojangVersions().catch(() => ['1.21.1', '1.20.4', '1.20.1', '1.19.4', '1.18.2', '1.16.5']),
+          adminApi.fetchMojangVersions().catch(() => []),
         ]);
 
         setMojangVersions(mojangList);
@@ -82,9 +82,12 @@ export const ConfigPage: React.FC = () => {
 
         if (isMounted) {
           setLoaderVersions(list);
-          // If current loaderVersion is empty or not in the list, default to the latest available
-          if (list.length > 0 && (!loaderVersion || loaderVersion === 'None' || !list.includes(loaderVersion))) {
-            setLoaderVersion(list[0]);
+          if (list.length > 0) {
+            if (!loaderVersion || loaderVersion === 'None' || !list.includes(loaderVersion)) {
+              setLoaderVersion(list[0]);
+            }
+          } else {
+            setLoaderVersion('');
           }
         }
       } catch (e) {
@@ -252,6 +255,11 @@ export const ConfigPage: React.FC = () => {
                   loading={loadingLoaders}
                   allowCustom={true}
                 />
+                {loaderType === 'FORGE' && loaderVersions.length === 0 && !loadingLoaders && (
+                  <p className="mt-2 text-xs font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl">
+                    ⚠️ Forge does not have an official release for Minecraft {mcVersion}. For versions 1.20.4+ and 1.21+, please use <strong>NEOFORGE</strong> or <strong>FABRIC</strong>.
+                  </p>
+                )}
               </div>
             )}
           </div>

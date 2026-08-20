@@ -268,7 +268,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span className="font-extrabold text-base tracking-widest uppercase text-white group-hover:text-[#df9168] transition-colors">
               CML
             </span>
-            <span className="text-[10px] text-slate-400 font-mono">v1.0</span>
+            <span className="text-[10px] text-slate-400 font-mono">v1.1</span>
           </div>
         </div>
 

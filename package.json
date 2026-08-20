@@ -1,0 +1,11 @@
+{
+  "name": "custom-mc-launcher-monorepo",
+  "version": "1.1.0",
+  "private": true,
+  "scripts": {
+    "bump": "node scripts/bump-version.cjs",
+    "build:server": "cd server && npm run build",
+    "build:admin": "cd admin-web && npm run build",
+    "build:client": "cd client && npm run build"
+  }
+}

@@ -341,30 +341,65 @@ class AdminApiService {
     if (!res.ok) throw new Error('Failed to restore user');
   }
 
-  // --- Public APIs for Versions ---
+  // --- Public APIs for Versions (Proxied through backend to bypass browser CORS restrictions) ---
   public async fetchMojangVersions(): Promise<string[]> {
     try {
+      const res = await fetch(`${this.baseUrl}/api/config/mojang-versions`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) return data;
+      }
+    } catch {
+      // Fallback to direct client fetch
+    }
+
+    try {
       const res = await fetch('https://piston-meta.mojang.com/mc/game/version_manifest_v2.json');
+      if (!res.ok) return [];
       const data = await res.json();
       return data.versions
         .filter((v: any) => v.type === 'release')
         .map((v: any) => v.id);
     } catch {
-      return ['1.21.1', '1.20.4', '1.20.1', '1.19.4', '1.18.2', '1.16.5', '1.12.2', '1.7.10'];
+      return [];
     }
   }
 
   public async fetchFabricLoaderVersions(gameVersion: string): Promise<string[]> {
     try {
-      const res = await fetch(`https://meta.fabricmc.net/v2/versions/loader/${gameVersion}`);
-      const data = await res.json();
-      return data.map((item: any) => item.loader.version);
+      const res = await fetch(`${this.baseUrl}/api/config/fabric-versions?gameVersion=${encodeURIComponent(gameVersion)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) return data;
+      }
     } catch {
-      return ['0.16.9', '0.15.11', '0.14.25'];
+      // Fallback
+    }
+
+    try {
+      const res = await fetch(`https://meta.fabricmc.net/v2/versions/loader/${encodeURIComponent(gameVersion)}`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        return data.map((item: any) => item.loader?.version).filter(Boolean);
+      }
+      return [];
+    } catch {
+      return [];
     }
   }
 
   public async fetchNeoForgeLoaderVersions(gameVersion: string): Promise<string[]> {
+    try {
+      const res = await fetch(`${this.baseUrl}/api/config/neoforge-versions?gameVersion=${encodeURIComponent(gameVersion)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) return data;
+      }
+    } catch {
+      // Fallback
+    }
+
     try {
       const res = await fetch('https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge');
       if (res.ok) {
@@ -387,41 +422,26 @@ class AdminApiService {
         }
         const filtered = allVersions.filter((v) => v.startsWith(prefix)).reverse();
         if (filtered.length > 0) return filtered;
-        const fallbackFiltered = allVersions.filter((v) => v.includes(gameVersion.replace('1.', ''))).reverse();
-        if (fallbackFiltered.length > 0) return fallbackFiltered;
+        return allVersions.filter((v) => v.includes(gameVersion.replace('1.', ''))).reverse();
       }
     } catch {
       // Ignore network errors
     }
-    if (gameVersion === '1.21.1') return ['21.1.248', '21.1.247', '21.1.127', '21.1.80', '21.1.50', '21.1.0'];
-    if (gameVersion === '1.20.4') return ['20.4.237', '20.4.100', '20.4.0'];
-    if (gameVersion === '1.20.1') return ['47.1.106', '47.1.0'];
-    return ['21.1.248', '21.1.127', '20.4.237', '47.1.106'];
+    return [];
   }
 
   public async fetchForgeLoaderVersions(gameVersion: string): Promise<string[]> {
     try {
-      const res = await fetch('https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json');
+      const res = await fetch(`${this.baseUrl}/api/config/forge-versions?gameVersion=${encodeURIComponent(gameVersion)}`);
       if (res.ok) {
         const data = await res.json();
-        const promos = data.promos || {};
-        const versions: string[] = [];
-        const latestKey = `${gameVersion}-latest`;
-        const recKey = `${gameVersion}-recommended`;
-        if (promos[recKey]) versions.push(promos[recKey]);
-        if (promos[latestKey] && promos[latestKey] !== promos[recKey]) versions.push(promos[latestKey]);
-        if (versions.length > 0) return versions;
+        if (Array.isArray(data) && data.length > 0) return data;
       }
     } catch {
-      // Ignore
+      // Fallback
     }
-    if (gameVersion === '1.21.1') return ['52.0.0'];
-    if (gameVersion === '1.20.1') return ['47.3.0', '47.2.0', '47.1.0'];
-    if (gameVersion === '1.19.4') return ['45.2.0', '45.1.0'];
-    if (gameVersion === '1.18.2') return ['40.2.0'];
-    if (gameVersion === '1.16.5') return ['36.2.39'];
-    if (gameVersion === '1.12.2') return ['14.23.5.2860'];
-    return ['47.3.0', '47.2.0', '40.2.0'];
+
+    return [];
   }
 
   // --- News & Articles Administration ---

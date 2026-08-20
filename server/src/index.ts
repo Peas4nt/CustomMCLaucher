@@ -65,7 +65,7 @@ const healthHandler = async (_req: express.Request, res: express.Response) => {
     res.json({
       status: 'online',
       service: 'CustomMCLauncher Administration API',
-      version: '1.0.0',
+      version: '1.1.0',
       totalManagedFiles: manifest.totalFiles,
       totalSizeBytes: manifest.totalSizeBytes,
       minecraftVersion: manifest.minecraftVersion,
@@ -105,9 +105,13 @@ app.patch('/api/servers/:id/set-primary', authenticateJwt, requireAdmin, (req, r
 );
 app.delete('/api/servers/:id', authenticateJwt, requireAdmin, (req, res) => serverController.deleteServer(req, res));
 
-// Global Config
+// Global Config & Official Versions Proxies
 app.get('/api/config', (req, res) => globalConfigController.getConfig(req, res));
 app.put('/api/config', authenticateJwt, requireAdmin, (req, res) => globalConfigController.updateConfig(req, res));
+app.get('/api/config/mojang-versions', (req, res) => globalConfigController.getMojangVersions(req, res));
+app.get('/api/config/fabric-versions', (req, res) => globalConfigController.getFabricVersions(req, res));
+app.get('/api/config/neoforge-versions', (req, res) => globalConfigController.getNeoForgeVersions(req, res));
+app.get('/api/config/forge-versions', (req, res) => globalConfigController.getForgeVersions(req, res));
 
 // Manifest & Indexer
 app.get('/api/manifest', (req, res) => indexerController.getFullManifest(req, res));

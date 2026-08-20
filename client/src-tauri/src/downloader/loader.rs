@@ -84,7 +84,7 @@ impl ModLoaderDownloader {
             .replace("${classpath_separator}", cp_sep)
             .replace("${version_name}", mc_version)
             .replace("${launcher_name}", "CustomMCLauncher")
-            .replace("${launcher_version}", "1.0.0");
+            .replace("${launcher_version}", "1.1.0");
 
         if replaced.starts_with("-DignoreList=") {
             replaced.push_str(&format!(
@@ -405,7 +405,13 @@ impl ModLoaderDownloader {
         let libraries_dir = self.game_dir.join("libraries");
         fs::create_dir_all(&libraries_dir).await?;
 
-        let forge_coord = format!("{}-{}", mc_version, loader_version);
+        let clean_mc = mc_version.trim();
+        let clean_loader = loader_version.trim();
+        let forge_coord = if clean_loader.starts_with(clean_mc) {
+            clean_loader.to_string()
+        } else {
+            format!("{}-{}", clean_mc, clean_loader)
+        };
         let forge_rel_path = format!("net/minecraftforge/forge/{0}/forge-{0}-installer.jar", forge_coord);
         let installer_path = libraries_dir.join(&forge_rel_path);
 
@@ -416,31 +422,111 @@ impl ModLoaderDownloader {
         let client = reqwest::Client::new();
 
         if !installer_path.exists() {
-            let installer_url = format!(
-                "https://maven.minecraftforge.net/net/minecraftforge/forge/{0}/forge-{0}-installer.jar",
-                forge_coord
-            );
-            log::info!("Downloading Forge installer from {}", installer_url);
+            let candidate_urls = vec![
+                format!("https://maven.minecraftforge.net/net/minecraftforge/forge/{0}/forge-{0}-installer.jar", forge_coord),
+                format!("https://files.minecraftforge.net/maven/net/minecraftforge/forge/{0}/forge-{0}-installer.jar", forge_coord),
+                format!("https://bmclapi2.bangbang93.com/forge/download?mcversion={}&version={}&category=installer", clean_mc, clean_loader),
+            ];
 
-            let res = client.get(&installer_url).send().await?.error_for_status()?;
-            let bytes = res.bytes().await?;
-            let mut file = File::create(&installer_path).await?;
-            file.write_all(&bytes).await?;
+            let mut downloaded = false;
+            let mut last_err = String::new();
+
+            for url in candidate_urls {
+                log::info!("Trying Forge installer download from {}", url);
+                match client.get(&url).send().await {
+                    Ok(res) if res.status().is_success() => {
+                        if let Ok(bytes) = res.bytes().await {
+                            if bytes.len() > 1024 {
+                                if let Ok(mut file) = File::create(&installer_path).await {
+                                    if file.write_all(&bytes).await.is_ok() {
+                                        downloaded = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Ok(res) => {
+                        last_err = format!("HTTP {} from {}", res.status(), url);
+                    }
+                    Err(e) => {
+                        last_err = format!("Error: {}", e);
+                    }
+                }
+            }
+
+            if !downloaded {
+                return Err(format!("Failed to download Forge installer for {} ({}). Please verify that Minecraft version '{}' and Forge version '{}' are compatible in the Admin Config. Last error: {}", mc_version, loader_version, mc_version, loader_version, last_err).into());
+            }
         }
 
-        let installer_bytes = std::fs::read(&installer_path)?;
-        let mut archive = zip::ZipArchive::new(std::io::Cursor::new(installer_bytes))?;
+        // 1.2 Check if client jar is already patched by the installer
+        let forge_client_rel = format!("net/minecraftforge/forge/{0}/forge-{0}-client.jar", forge_coord);
+        let client_patched_path = libraries_dir.join(&forge_client_rel);
 
-        let mut manifest_opt = None;
-        for i in 0..archive.len() {
-            let mut file = archive.by_index(i)?;
-            if file.name() == "version.json" {
-                let mut content = String::new();
-                file.read_to_string(&mut content)?;
-                if let Ok(manifest) = serde_json::from_str::<LoaderVersionManifest>(&content) {
-                    manifest_opt = Some(manifest);
+        let forge_universal_rel = format!("net/minecraftforge/forge/{0}/forge-{0}-universal.jar", forge_coord);
+        let universal_path = libraries_dir.join(&forge_universal_rel);
+
+        if !client_patched_path.exists() && !universal_path.exists() {
+            log::info!("Running Forge installer to patch client jars...");
+            let profiles_path = self.game_dir.join("launcher_profiles.json");
+            if !profiles_path.exists() {
+                let _ = fs::write(&profiles_path, b"{\"profiles\":{}}").await;
+            }
+
+            let java_bin = crate::downloader::JavaResolver::find_system_java(None)
+                .unwrap_or_else(|| std::path::PathBuf::from("java"));
+            let mut cmd = std::process::Command::new(&java_bin);
+            cmd.arg("-jar")
+                .arg(&installer_path)
+                .arg("--installClient")
+                .arg(&self.game_dir);
+
+            #[cfg(target_os = "windows")]
+            {
+                use std::os::windows::process::CommandExt;
+                const CREATE_NO_WINDOW: u32 = 0x08000000;
+                cmd.creation_flags(CREATE_NO_WINDOW);
+            }
+
+            if let Ok(status) = cmd.status() {
+                log::info!("Forge installer completed with status: {:?}", status);
+            }
+        }
+
+        // 2. Read version json (check generated version profile in versions/ or installer)
+        let candidate_version_jsons = vec![
+            self.game_dir.join("versions").join(&forge_coord).join(format!("{}.json", forge_coord)),
+            self.game_dir.join("versions").join(format!("{}-forge-{}", mc_version, loader_version)).join(format!("{}-forge-{}.json", mc_version, loader_version)),
+            self.game_dir.join("versions").join(format!("1.21.1-forge-{}", loader_version)).join(format!("1.21.1-forge-{}.json", loader_version)),
+        ];
+
+        let mut manifest_opt: Option<LoaderVersionManifest> = None;
+        for c_path in candidate_version_jsons {
+            if c_path.exists() {
+                if let Ok(content) = fs::read_to_string(&c_path).await {
+                    if let Ok(m) = serde_json::from_str::<LoaderVersionManifest>(&content) {
+                        manifest_opt = Some(m);
+                        break;
+                    }
                 }
-                break;
+            }
+        }
+
+        if manifest_opt.is_none() {
+            let installer_bytes = std::fs::read(&installer_path)?;
+            let mut archive = zip::ZipArchive::new(std::io::Cursor::new(installer_bytes))?;
+
+            for i in 0..archive.len() {
+                let mut file = archive.by_index(i)?;
+                if file.name() == "version.json" {
+                    let mut content = String::new();
+                    file.read_to_string(&mut content)?;
+                    if let Ok(manifest) = serde_json::from_str::<LoaderVersionManifest>(&content) {
+                        manifest_opt = Some(manifest);
+                    }
+                    break;
+                }
             }
         }
 
@@ -486,6 +572,7 @@ impl ModLoaderDownloader {
                                 lib.url.as_ref().map(|u| format!("{}/{}", u.trim_end_matches('/'), rel)),
                                 Some(format!("https://maven.minecraftforge.net/{}", rel)),
                                 Some(format!("https://libraries.minecraft.net/{}", rel)),
+                                Some(format!("https://repo.spongepowered.org/repository/maven-public/{}", rel)),
                                 Some(format!("https://repo1.maven.org/maven2/{}", rel)),
                             ];
 
@@ -512,7 +599,13 @@ impl ModLoaderDownloader {
             "cpw.mods.bootstraplauncher.BootstrapLauncher".to_string()
         };
 
-        classpath_entries.push(installer_path);
+        if universal_path.exists() {
+            classpath_entries.push(universal_path);
+        } else if client_patched_path.exists() {
+            classpath_entries.push(client_patched_path);
+        } else {
+            classpath_entries.push(installer_path);
+        }
 
         Ok(ModLoaderResolution {
             main_class,

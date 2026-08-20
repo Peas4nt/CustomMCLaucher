@@ -5,6 +5,21 @@ All notable changes to the CustomMCLauncher project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-08-20
+
+### ⚡ Added & Improved
+- **Quick Server Auto-Connect (`--quickPlayMultiplayer`)**:
+  - Implemented automatic instant join into the primary/selected game server upon game startup, bypassing the main menu.
+  - Automatically updates and persists multiplayer entries in `.minecraft/servers.dat` with auto-accepted server resource packs.
+- **Complete Minecraft Forge ModLoader Engine Fixes**:
+  - Added headless background installer execution (`--installClient`) creating patched `forge-client.jar` and generated version manifests.
+  - Fixed classpath deduplication bug in JVM launcher preserving all required library JARs, ASM transformers, and `net.minecraft.client.Minecraft.class`.
+  - Added backend version proxy endpoints (`/api/config/forge-versions`, `/api/config/neoforge-versions`, `/api/config/fabric-versions`, `/api/config/mojang-versions`) to bypass browser CORS restrictions and fetch 100% live official releases.
+- **Centralized Single-Command Version Management**:
+  - Created single source of truth `version.json` and automated script `npm run bump <version>` to synchronize versions across backend, admin web, Tauri configs, Cargo.toml, Rust downloader, and UI badges in one step.
+
+---
+
 ## [1.0.0] - 2026-08-20
 
 ### 🚀 Initial Production Release
