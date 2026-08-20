@@ -81,4 +81,14 @@ if (fs.existsSync(serverIndexPath)) {
   console.log('✔ Updated server/src/index.ts health version');
 }
 
+// 8. Update GitHub Actions release.yml
+const workflowPath = path.join(rootDir, '.github/workflows/release.yml');
+if (fs.existsSync(workflowPath)) {
+  let content = fs.readFileSync(workflowPath, 'utf8');
+  content = content.replace(/default:\s*"v.*?"/g, `default: "${displayVersion}.0"`);
+  content = content.replace(/description:\s*"Release tag \(e\.g\. v.*?\)"/g, `description: "Release tag (e.g. ${displayVersion}.0)"`);
+  fs.writeFileSync(workflowPath, content);
+  console.log('✔ Updated .github/workflows/release.yml');
+}
+
 console.log(`\n🎉 Project successfully bumped to ${semverClean}!\n`);
