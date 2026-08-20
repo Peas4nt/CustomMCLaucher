@@ -8,6 +8,8 @@ services:
         BRANCH: master
     container_name: cmcl-backend
     restart: unless-stopped
+    security_opt:
+      - apparmor:unconfined
     ports:
       - "4000:4000"
     environment:
