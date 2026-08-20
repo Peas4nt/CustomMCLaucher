@@ -1,16 +1,8 @@
 services:
   cmcl-server:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        REPO_URL: https://github.com/Peas4nt/CustomMCLaucher.git
-        BRANCH: master
+    image: ghcr.io/peas4nt/custommclaucher-server:latest
     container_name: cmcl-backend
     restart: unless-stopped
-    security_opt:
-      - apparmor:unconfined
-    privileged: true
     ports:
       - "4000:4000"
     environment:
