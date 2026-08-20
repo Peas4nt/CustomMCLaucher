@@ -13,7 +13,7 @@ services:
       - CORS_ORIGIN=*
       - MODPACK_STORAGE_DIR=/app/storage
     volumes:
-      # Persistent storage on host machine
-      - ./data/prisma:/app/prisma
+      # Mount only the database FILE (not the whole prisma/ dir - that would shadow schema.prisma)
+      - ./data/prod.db:/app/prisma/prod.db
       - ./data/uploads:/app/uploads
       - ./data/storage:/app/storage
